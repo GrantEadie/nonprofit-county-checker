@@ -6,6 +6,7 @@ import ResultsTable from "@/components/ResultsTable";
 import SavedSearches, { useSavedSearches } from "@/components/SavedSearches";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
+import WelcomePopup from "@/components/WelcomePopup";
 import type { SearchParams, SearchResponse } from "@/lib/types";
 
 export default function Home() {
@@ -41,6 +42,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      <WelcomePopup />
 
       {/* Header */}
       <header className="border-b border-[var(--border-accent)] bg-surface backdrop-blur-sm">
