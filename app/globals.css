@@ -7,55 +7,82 @@
     box-sizing: border-box;
   }
 
+  /* ── Light mode (default) ─────────────────────────────────────────── */
   :root {
-    color-scheme: dark;
+    color-scheme: light;
+
+    --page:      #eceae5;
+    --surface:   #ffffff;
+    --surface-2: #f4f2ed;
+    --surface-3: #eae7df;
+
+    --ink-1: #1e212b;
+    --ink-2: #50546a;
+    --ink-3: #828698;
+    --ink-4: #babdc8;
+
+    --border:        rgba(30, 33, 43, 0.09);
+    --border-accent: rgba(255, 132, 39, 0.22);
+
+    --viable-text:   #3a7020;
+    --viable-bg:     rgba(77, 139, 49, 0.08);
+    --viable-border: rgba(77, 139, 49, 0.22);
   }
 
-  body {
-    background-color: #0f0f11;
-    color: #f4f4f5;
+  /* ── Dark mode ────────────────────────────────────────────────────── */
+  html.dark {
+    color-scheme: dark;
+
+    --page:      #14161e;
+    --surface:   #1e212b;
+    --surface-2: #242a36;
+    --surface-3: #2e3547;
+
+    --ink-1: #f0f1f5;
+    --ink-2: #8b90a8;
+    --ink-3: #565b72;
+    --ink-4: #363b4e;
+
+    --border:        rgba(255, 255, 255, 0.07);
+    --border-accent: rgba(255, 132, 39, 0.15);
+
+    --viable-text:   #6ab844;
+    --viable-bg:     rgba(77, 139, 49, 0.12);
+    --viable-border: rgba(77, 139, 49, 0.25);
   }
 
   /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #1a1a1f;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #3f3f46;
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #52525b;
-  }
+  ::-webkit-scrollbar        { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track  { background: var(--surface-2); }
+  ::-webkit-scrollbar-thumb  { background: var(--ink-4); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
 
   /* Table row hover */
   .results-row {
     transition: background-color 0.1s ease;
   }
 
-  /* Input focus ring */
-  .dark-input {
-    @apply bg-surface-2 border border-white/8 rounded-lg px-3 py-2 text-sm text-zinc-100
-           placeholder:text-zinc-500 transition-all duration-150
-           focus:outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20;
+  /* ── Shared input / select styles ─────────────────────────────────── */
+  .form-field {
+    background-color: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--ink-1);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+  }
+  .form-field::placeholder {
+    color: var(--ink-3);
+  }
+  .form-field:focus {
+    outline: none;
+    border-color: rgba(255, 132, 39, 0.6);
+    box-shadow: 0 0 0 3px rgba(255, 132, 39, 0.15);
   }
 
-  .dark-select {
-    @apply bg-surface-2 border border-white/8 rounded-lg px-3 py-2 text-sm text-zinc-100
-           transition-all duration-150
-           focus:outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20;
-  }
-}
-
-@layer utilities {
-  .border-white\/8 {
-    border-color: rgba(255, 255, 255, 0.08);
-  }
-  .border-white\/5 {
-    border-color: rgba(255, 255, 255, 0.05);
-  }
+  /* aliases used across components */
+  .dark-input  { @apply form-field; }
+  .dark-select { @apply form-field; }
 }

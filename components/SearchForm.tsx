@@ -92,13 +92,20 @@ export default function SearchForm({ onSearch, loading, initialParams }: Props) 
     onSearch({ state, county, cities: [...selectedCities], threshold });
   }
 
+  const spinnerSvg = (
+    <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+    </svg>
+  );
+
   return (
     <form onSubmit={handleSubmit} className="space-y-7">
 
       {/* Row 1: State */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider">
+          <label className="block text-xs font-medium text-ink-3 uppercase tracking-wider">
             State
           </label>
           <select
@@ -116,15 +123,12 @@ export default function SearchForm({ onSearch, loading, initialParams }: Props) 
         {/* County dropdown — visible once state is chosen */}
         {state && (
           <div className="sm:col-span-2 space-y-1.5">
-            <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider">
+            <label className="block text-xs font-medium text-ink-3 uppercase tracking-wider">
               County
             </label>
             {countiesLoading ? (
-              <div className="flex items-center gap-2 text-sm text-zinc-500 h-9">
-                <svg className="animate-spin w-3.5 h-3.5 text-orange-500" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                </svg>
+              <div className="flex items-center gap-2 text-sm text-ink-3 h-9">
+                {spinnerSvg}
                 Loading counties…
               </div>
             ) : (
@@ -147,31 +151,29 @@ export default function SearchForm({ onSearch, loading, initialParams }: Props) 
                   type="button"
                   onClick={handleFindCities}
                   disabled={cityLoading || !county}
-                  className="px-4 py-2 text-sm font-medium rounded-lg border border-white/8 bg-surface-3
-                             text-zinc-300 hover:text-zinc-100 hover:bg-surface-3/80
+                  className="px-4 py-2 text-sm font-medium rounded-lg
+                             border border-[var(--border)] bg-surface-3
+                             text-ink-2 hover:text-ink-1
                              disabled:opacity-40 disabled:cursor-not-allowed
                              transition-all duration-150 whitespace-nowrap"
                 >
                   {cityLoading ? (
                     <span className="flex items-center gap-2">
-                      <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                      </svg>
+                      {spinnerSvg}
                       Loading
                     </span>
                   ) : "Find Cities"}
                 </button>
               </div>
             )}
-            {cityError && <p className="text-xs text-red-400 mt-1">{cityError}</p>}
+            {cityError && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{cityError}</p>}
           </div>
         )}
       </div>
 
       {/* Revenue Threshold */}
       <div className="space-y-1.5">
-        <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider">
+        <label className="block text-xs font-medium text-ink-3 uppercase tracking-wider">
           Revenue Threshold
         </label>
         <div className="flex flex-wrap gap-2">
@@ -182,8 +184,8 @@ export default function SearchForm({ onSearch, loading, initialParams }: Props) 
               onClick={() => setThreshold(opt.value)}
               className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-all duration-150 ${
                 threshold === opt.value
-                  ? "bg-orange-500/20 border-orange-500/50 text-orange-300"
-                  : "border-white/8 bg-surface-2 text-zinc-400 hover:text-zinc-200 hover:border-white/15"
+                  ? "bg-tangerine/20 border-tangerine/50 text-tangerine"
+                  : "border-[var(--border)] bg-surface-2 text-ink-3 hover:text-ink-1 hover:border-[var(--border-accent)]"
               }`}
             >
               {opt.label}
@@ -196,25 +198,25 @@ export default function SearchForm({ onSearch, loading, initialParams }: Props) 
       {allCities.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+            <label className="text-xs font-medium text-ink-3 uppercase tracking-wider">
               Cities
-              <span className="ml-2 text-zinc-500 normal-case tracking-normal font-normal">
+              <span className="ml-2 text-ink-4 normal-case tracking-normal font-normal">
                 {selectedCities.size} of {allCities.length} selected
               </span>
             </label>
-            <div className="flex gap-3 text-xs text-orange-400">
-              <button type="button" onClick={() => setSelectedCities(new Set(allCities))} className="hover:text-orange-300 transition-colors">All</button>
-              <button type="button" onClick={() => setSelectedCities(new Set())} className="hover:text-orange-300 transition-colors">None</button>
+            <div className="flex gap-3 text-xs text-tangerine">
+              <button type="button" onClick={() => setSelectedCities(new Set(allCities))} className="hover:opacity-80 transition-opacity">All</button>
+              <button type="button" onClick={() => setSelectedCities(new Set())} className="hover:opacity-80 transition-opacity">None</button>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-4 bg-surface-2 rounded-xl border border-white/5 max-h-52 overflow-y-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-4 bg-surface-2 rounded-xl border border-[var(--border)] max-h-52 overflow-y-auto">
             {allCities.map((city) => (
               <label key={city} className="flex items-center gap-2.5 text-sm cursor-pointer group">
                 <div
                   className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border transition-all duration-150 ${
                     selectedCities.has(city)
-                      ? "bg-orange-500 border-orange-500"
-                      : "border-zinc-600 bg-surface-3 group-hover:border-zinc-400"
+                      ? "bg-tangerine border-tangerine"
+                      : "border-[var(--border)] bg-surface-3 group-hover:border-[var(--border-accent)]"
                   }`}
                   onClick={() => toggleCity(city)}
                 >
@@ -225,7 +227,7 @@ export default function SearchForm({ onSearch, loading, initialParams }: Props) 
                   )}
                 </div>
                 <span
-                  className={`transition-colors ${selectedCities.has(city) ? "text-zinc-200" : "text-zinc-500 group-hover:text-zinc-300"}`}
+                  className={`transition-colors ${selectedCities.has(city) ? "text-ink-1" : "text-ink-3 group-hover:text-ink-2"}`}
                   onClick={() => toggleCity(city)}
                 >
                   {city}
@@ -242,11 +244,11 @@ export default function SearchForm({ onSearch, loading, initialParams }: Props) 
           type="submit"
           disabled={loading || selectedCities.size === 0}
           className="relative px-7 py-2.5 rounded-lg text-sm font-semibold
-                     bg-orange-600 hover:bg-orange-500
-                     text-white shadow-lg shadow-orange-500/20
+                     bg-tangerine hover:opacity-90 text-white
+                     shadow-lg shadow-tangerine/20
                      disabled:opacity-40 disabled:cursor-not-allowed
                      transition-all duration-150
-                     focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                     focus:outline-none focus:ring-2 focus:ring-tangerine/50"
         >
           {loading ? (
             <span className="flex items-center gap-2">

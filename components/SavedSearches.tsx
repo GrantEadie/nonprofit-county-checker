@@ -53,23 +53,23 @@ export default function SavedSearches({ saved, onLoad, onDelete }: Props) {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Recent Searches</p>
+      <p className="text-xs font-medium text-ink-3 uppercase tracking-wider">Recent Searches</p>
       <div className="flex flex-wrap gap-2">
         {saved.map((s) => (
           <div
             key={s.id}
-            className="group flex items-center gap-1 bg-surface-2 border border-orange-500/10
+            className="group flex items-center gap-1 bg-surface-2 border border-[var(--border-accent)]
                        rounded-lg pl-3.5 pr-2 py-1.5 transition-all duration-150
-                       hover:border-orange-500/20 hover:bg-surface-3"
+                       hover:border-tangerine/40 hover:bg-surface-3"
           >
             <button
               type="button"
               onClick={() => onLoad(s.params)}
               className="text-left"
             >
-              <span className="text-sm font-medium text-zinc-300">{s.label}</span>
+              <span className="text-sm font-medium text-ink-2">{s.label}</span>
               {s.resultCount !== undefined && (
-                <span className="ml-2 text-xs text-zinc-600">
+                <span className="ml-2 text-xs text-ink-4">
                   {s.resultCount} orgs{s.viableCount !== undefined ? ` · ${s.viableCount} viable` : ""}
                 </span>
               )}
@@ -78,7 +78,7 @@ export default function SavedSearches({ saved, onLoad, onDelete }: Props) {
               type="button"
               onClick={() => onDelete(s.id)}
               aria-label="Remove"
-              className="ml-1 text-zinc-700 hover:text-zinc-400 transition-colors text-xs p-0.5"
+              className="ml-1 text-ink-4 hover:text-ink-2 transition-colors text-xs p-0.5"
             >
               ✕
             </button>
