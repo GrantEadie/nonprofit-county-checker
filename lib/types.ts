@@ -1,3 +1,28 @@
+export type SearchMode = "nonprofits" | "bcorps";
+
+export interface BCorpResult {
+  id: string;
+  name: string;
+  website: string;
+  city: string;
+  state: string;
+  country: string;
+  industry: string;
+  sector: string;
+  employees: string;
+  score: number | null;
+  certifiedDate: string;
+  profileUrl: string;
+}
+
+export interface BCorpSearchResponse {
+  results: BCorpResult[];
+  total: number;
+  state: string;
+  county: string;
+  cities: string[];
+}
+
 export interface OrgResult {
   ein: string;
   name: string;

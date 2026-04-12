@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import type { OrgResult, SearchResponse } from "@/lib/types";
 
 type SortKey = keyof Pick<OrgResult, "name" | "city" | "revenue" | "nteeCategory" | "taxPeriod">;
@@ -20,16 +20,17 @@ function fmtFull(n: number | null): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
-function exportCsv(rows: OrgResult[], county: string, state: string) {
+function exportCsv(rows: OrgResult[], county: string, state: string, websites: Map<string, string | null>) {
   const headers = [
     "Organization Name","EIN","City","State","NTEE Code","Category",
-    "Tax Type","Annual Revenue","Assets","Filing Year","Viable","ProPublica URL",
+    "Tax Type","Annual Revenue","Assets","Filing Year","Viable","Website","ProPublica URL",
   ];
   const lines = rows.map((r) => [
     `"${r.name.replace(/"/g, '""')}"`,
     r.ein, r.city, r.state, r.nteeCode, r.nteeCategory, r.subsection,
     r.revenue ?? "", r.assets ?? "", r.taxPeriod,
     r.viable === null ? "" : r.viable ? "YES" : "NO",
+    websites.get(r.ein) ?? "",
     r.propublicaUrl,
   ].join(","));
   const csv  = [headers.join(","), ...lines].join("\n");
@@ -47,10 +48,49 @@ type FilterMode = "all" | "viable" | "no-data";
 interface Props { data: SearchResponse }
 
 export default function ResultsTable({ data }: Props) {
-  const [sortKey, setSortKey] = useState<SortKey>("revenue");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const [filter,  setFilter]  = useState<FilterMode>("all");
-  const [search,  setSearch]  = useState("");
+  const [sortKey,   setSortKey]  = useState<SortKey>("revenue");
+  const [sortDir,   setSortDir]  = useState<SortDir>("desc");
+  const [filter,    setFilter]   = useState<FilterMode>("all");
+  const [search,    setSearch]   = useState("");
+  // website: undefined = not yet fetched, null = no website found, string = url
+  const [websites,  setWebsites] = useState<Map<string, string | null>>(new Map());
+  const fetchedEins = useRef<Set<string>>(new Set());
+
+  // Batch-fetch websites for all results (5 at a time)
+  useEffect(() => {
+    const eins = data.results.map((r) => r.ein).filter((ein) => !fetchedEins.current.has(ein));
+    if (eins.length === 0) return;
+    eins.forEach((ein) => fetchedEins.current.add(ein));
+
+    const CONCURRENCY = 5;
+    let i = 0;
+
+    async function fetchNext() {
+      if (i >= eins.length) return;
+      const ein = eins[i++];
+      try {
+        const res = await fetch(`/api/website?ein=${ein}`);
+        const { website } = await res.json();
+        setWebsites((prev) => {
+          const next = new Map(prev);
+          next.set(ein, website ?? null);
+          return next;
+        });
+      } catch {
+        setWebsites((prev) => {
+          const next = new Map(prev);
+          next.set(ein, null);
+          return next;
+        });
+      }
+      fetchNext();
+    }
+
+    // Kick off CONCURRENCY workers
+    for (let w = 0; w < Math.min(CONCURRENCY, eins.length); w++) {
+      fetchNext();
+    }
+  }, [data.results]);
 
   function handleSort(key: SortKey) {
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -133,7 +173,7 @@ export default function ResultsTable({ data }: Props) {
 
         <button
           type="button"
-          onClick={() => exportCsv(filtered, data.county, data.state)}
+          onClick={() => exportCsv(filtered, data.county, data.state, websites)}
           className="flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium rounded-lg
                      border border-[var(--border)] bg-surface-2 text-ink-3
                      hover:text-ink-1 hover:border-[var(--border-accent)] transition-all duration-150"
@@ -160,6 +200,7 @@ export default function ResultsTable({ data }: Props) {
               <th className={thCls} onClick={() => handleSort("revenue")}>Revenue <SortIcon col="revenue" /></th>
               <th className={thCls} onClick={() => handleSort("taxPeriod")}>Year <SortIcon col="taxPeriod" /></th>
               <th className={`${thCls} cursor-default`}>Viable</th>
+              <th className={`${thCls} cursor-default`}>Website</th>
               <th className={`${thCls} cursor-default`}>Details</th>
             </tr>
           </thead>
@@ -206,6 +247,22 @@ export default function ResultsTable({ data }: Props) {
                   )}
                   {org.viable === null  && <span className="text-ink-4 text-xs">—</span>}
                 </td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {!websites.has(org.ein) ? (
+                    <span className="text-ink-4 text-xs animate-pulse">···</span>
+                  ) : websites.get(org.ein) ? (
+                    <a
+                      href={websites.get(org.ein)!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-tangerine hover:opacity-80 transition-opacity"
+                    >
+                      Website ↗
+                    </a>
+                  ) : (
+                    <span className="text-ink-4 text-xs">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   <a
                     href={org.propublicaUrl}
@@ -220,7 +277,7 @@ export default function ResultsTable({ data }: Props) {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-16 text-center text-ink-3">
+                <td colSpan={8} className="px-4 py-16 text-center text-ink-3">
                   No results match your filter.
                 </td>
               </tr>

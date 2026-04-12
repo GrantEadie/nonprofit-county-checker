@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { SearchParams } from "@/lib/types";
+import type { SearchParams, SearchMode } from "@/lib/types";
 
 interface Props {
   onSearch: (params: SearchParams) => void;
   loading: boolean;
   initialParams?: SearchParams;
+  mode: SearchMode;
 }
 
 const STATE_OPTIONS = [
@@ -24,7 +25,7 @@ const THRESHOLD_OPTIONS = [
   { label: "$5M+",   value: 5_000_000 },
 ];
 
-export default function SearchForm({ onSearch, loading, initialParams }: Props) {
+export default function SearchForm({ onSearch, loading, initialParams, mode }: Props) {
   const [state,     setState]     = useState(initialParams?.state     ?? "");
   const [county,    setCounty]    = useState(initialParams?.county    ?? "");
   const [threshold, setThreshold] = useState(initialParams?.threshold ?? 1_000_000);
@@ -171,28 +172,30 @@ export default function SearchForm({ onSearch, loading, initialParams }: Props) 
         )}
       </div>
 
-      {/* Revenue Threshold */}
-      <div className="space-y-1.5">
-        <label className="block text-xs font-medium text-ink-3 uppercase tracking-wider">
-          Revenue Threshold
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {THRESHOLD_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setThreshold(opt.value)}
-              className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-all duration-150 ${
-                threshold === opt.value
-                  ? "bg-tangerine/20 border-tangerine/50 text-tangerine"
-                  : "border-[var(--border)] bg-surface-2 text-ink-3 hover:text-ink-1 hover:border-[var(--border-accent)]"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+      {/* Revenue Threshold — nonprofits only */}
+      {mode === "nonprofits" && (
+        <div className="space-y-1.5">
+          <label className="block text-xs font-medium text-ink-3 uppercase tracking-wider">
+            Revenue Threshold
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {THRESHOLD_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setThreshold(opt.value)}
+                className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-all duration-150 ${
+                  threshold === opt.value
+                    ? "bg-tangerine/20 border-tangerine/50 text-tangerine"
+                    : "border-[var(--border)] bg-surface-2 text-ink-3 hover:text-ink-1 hover:border-[var(--border-accent)]"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Cities */}
       {allCities.length > 0 && (
@@ -258,7 +261,7 @@ export default function SearchForm({ onSearch, loading, initialParams }: Props) 
               </svg>
               Searching…
             </span>
-          ) : "Search Nonprofits"}
+          ) : mode === "bcorps" ? "Search B Corps" : "Search Nonprofits"}
         </button>
       </div>
     </form>

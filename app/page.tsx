@@ -3,16 +3,19 @@
 import { useState } from "react";
 import SearchForm from "@/components/SearchForm";
 import ResultsTable from "@/components/ResultsTable";
+import BCorpResultsTable from "@/components/BCorpResultsTable";
 import SavedSearches, { useSavedSearches } from "@/components/SavedSearches";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import WelcomePopup from "@/components/WelcomePopup";
-import type { SearchParams, SearchResponse } from "@/lib/types";
+import type { SearchParams, SearchResponse, BCorpSearchResponse, SearchMode } from "@/lib/types";
 
 export default function Home() {
+  const [mode,       setMode]       = useState<SearchMode>("nonprofits");
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState("");
-  const [results,    setResults]    = useState<SearchResponse | null>(null);
+  const [npResults,  setNpResults]  = useState<SearchResponse | null>(null);
+  const [bcResults,  setBcResults]  = useState<BCorpSearchResponse | null>(null);
   const [lastParams, setLastParams] = useState<SearchParams | undefined>();
 
   const { saved, saveSearch, deleteSearch } = useSavedSearches();
@@ -20,25 +23,42 @@ export default function Home() {
   async function handleSearch(params: SearchParams) {
     setLoading(true);
     setError("");
-    setResults(null);
+    setNpResults(null);
+    setBcResults(null);
 
     try {
-      const res = await fetch("/api/search", {
-        method: "POST",
+      const endpoint = mode === "bcorps" ? "/api/bcorp" : "/api/search";
+      const res  = await fetch(endpoint, {
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
+        body:    JSON.stringify(params),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Search failed");
-      setResults(data as SearchResponse);
+
+      if (mode === "bcorps") {
+        setBcResults(data as BCorpSearchResponse);
+        saveSearch(params, data.total, 0);
+      } else {
+        setNpResults(data as SearchResponse);
+        saveSearch(params, data.total, data.viable);
+      }
       setLastParams(params);
-      saveSearch(params, data.total, data.viable);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }
   }
+
+  function handleModeChange(newMode: SearchMode) {
+    setMode(newMode);
+    setError("");
+    setNpResults(null);
+    setBcResults(null);
+  }
+
+  const results = mode === "bcorps" ? bcResults : npResults;
 
   return (
     <div className="min-h-screen">
@@ -51,10 +71,10 @@ export default function Home() {
             <Logo className="w-8 h-8 text-tangerine flex-shrink-0" />
             <div>
               <h1 className="font-oswald text-sm uppercase tracking-wide text-ink-1">
-                Nonprofit County Checker
+                Org County Checker
               </h1>
               <p className="text-xs text-ink-3 mt-0.5">
-                IRS public data · updated monthly
+                Nonprofits · B Corps · by county
               </p>
             </div>
           </div>
@@ -87,6 +107,27 @@ export default function Home() {
 
         {/* Search card */}
         <div className="rounded-2xl border border-[var(--border-accent)] bg-surface shadow-xl shadow-black/10 dark:shadow-black/30 p-6 sm:p-8">
+
+          {/* Mode toggle */}
+          <div className="flex items-center gap-1 mb-6 p-1 bg-surface-2 rounded-xl border border-[var(--border)] w-fit">
+            {(["nonprofits", "bcorps"] as SearchMode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => handleModeChange(m)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                  mode === m
+                    ? m === "bcorps"
+                      ? "bg-bcorp/20 text-bcorp border border-bcorp/40 shadow-sm"
+                      : "bg-tangerine/20 text-tangerine border border-tangerine/40 shadow-sm"
+                    : "text-ink-3 hover:text-ink-2"
+                }`}
+              >
+                {m === "nonprofits" ? "Nonprofits" : "B Corps"}
+              </button>
+            ))}
+          </div>
+
           <h2 className="text-xs font-medium text-ink-3 uppercase tracking-widest mb-6">
             Search
           </h2>
@@ -94,6 +135,7 @@ export default function Home() {
             onSearch={handleSearch}
             loading={loading}
             initialParams={lastParams}
+            mode={mode}
           />
         </div>
 
@@ -115,22 +157,43 @@ export default function Home() {
                 {results.county} County, {results.state}
               </span>
             </div>
-            <ResultsTable data={results} />
+            {mode === "bcorps" && bcResults ? (
+              <BCorpResultsTable data={bcResults} />
+            ) : npResults ? (
+              <ResultsTable data={npResults} />
+            ) : null}
           </div>
         )}
 
         {/* Footer note */}
         <p className="text-xs text-ink-4 text-center pb-8">
-          Data from the{" "}
-          <a
-            href="https://www.irs.gov/charities-non-profits/exempt-organizations-business-master-file-extract-eo-bmf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-ink-3 hover:text-tangerine transition-colors underline underline-offset-2"
-          >
-            IRS Exempt Organizations Business Master File
-          </a>
-          . Revenue figures from most recent Form 990 filing.
+          {mode === "bcorps" ? (
+            <>
+              B Corp data from the{" "}
+              <a
+                href="https://www.bcorporation.net/en-us/find-a-b-corp/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-ink-3 hover:text-tangerine transition-colors underline underline-offset-2"
+              >
+                B Lab directory
+              </a>
+              . Certification status verified by B Lab.
+            </>
+          ) : (
+            <>
+              Data from the{" "}
+              <a
+                href="https://www.irs.gov/charities-non-profits/exempt-organizations-business-master-file-extract-eo-bmf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-ink-3 hover:text-tangerine transition-colors underline underline-offset-2"
+              >
+                IRS Exempt Organizations Business Master File
+              </a>
+              . Revenue figures from most recent Form 990 filing.
+            </>
+          )}
         </p>
       </main>
     </div>

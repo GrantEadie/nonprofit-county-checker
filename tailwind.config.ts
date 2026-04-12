@@ -27,6 +27,7 @@ const config: Config = {
           4: "var(--ink-4)",
         },
         viable: "var(--viable-text)",
+        bcorp:  "#2ea44f",   // B Corp green (matches B Lab brand)
         // ── Palette (fixed) ───────────────────────────────────────────────
         // Shadow Grey       #1e212b
         // Forest Green      #4d8b31
