@@ -15,12 +15,18 @@ export const STATE_FIPS: Record<string, string> = {
 
 const CENSUS_BASE = "https://api.census.gov/data/2020/acs/acs5";
 
+function censusKey(): string {
+  const key = process.env.CENSUS_API_KEY;
+  if (!key) throw new Error("CENSUS_API_KEY is not set");
+  return `&key=${key}`;
+}
+
 // Suffixes to strip from Census place names (applied after splitting on comma)
 const PLACE_SUFFIX = /\s+(city|town|CDP|CCD|village|borough|municipality|charter township|township|unorganized territory|county|balance of county)\b.*/i;
 const SKIP_TERMS = /unorganized|balance of|remainder|not in|reservation/i;
 
 async function getCountyFips(stateFips: string, countyName: string): Promise<string | null> {
-  const url = `${CENSUS_BASE}?get=NAME&for=county:*&in=state:${stateFips}`;
+  const url = `${CENSUS_BASE}?get=NAME&for=county:*&in=state:${stateFips}${censusKey()}`;
   const res = await fetch(url, { next: { revalidate: 86400 } });
   if (!res.ok) return null;
 
@@ -43,7 +49,7 @@ export async function getCitiesForCounty(state: string, county: string): Promise
   const countyFips = await getCountyFips(stateFips, county);
   if (!countyFips) throw new Error(`County not found: ${county}, ${state}`);
 
-  const url = `${CENSUS_BASE}?get=NAME&for=county+subdivision:*&in=state:${stateFips}+county:${countyFips}`;
+  const url = `${CENSUS_BASE}?get=NAME&for=county+subdivision:*&in=state:${stateFips}+county:${countyFips}${censusKey()}`;
   const res = await fetch(url, { next: { revalidate: 86400 } });
   if (!res.ok) throw new Error("Failed to fetch cities from Census API");
 

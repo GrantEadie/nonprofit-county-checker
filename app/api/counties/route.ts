@@ -11,7 +11,9 @@ export async function GET(req: NextRequest) {
   if (!stateFips) return NextResponse.json({ error: `Unknown state: ${state}` }, { status: 400 });
 
   try {
-    const url = `${CENSUS_BASE}?get=NAME&for=county:*&in=state:${stateFips}`;
+    const censusKey = process.env.CENSUS_API_KEY;
+    if (!censusKey) throw new Error("CENSUS_API_KEY is not set");
+    const url = `${CENSUS_BASE}?get=NAME&for=county:*&in=state:${stateFips}&key=${censusKey}`;
     const res = await fetch(url, { next: { revalidate: 86400 } });
     if (!res.ok) throw new Error("Census API error");
 
