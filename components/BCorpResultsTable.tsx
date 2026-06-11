@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { BCorpResult, BCorpSearchResponse } from "@/lib/types";
+import { exportToGoogleSheets } from "@/lib/googleSheets";
 
 type SortKey = "name" | "city" | "score" | "industry" | "certifiedDate";
 type SortDir = "asc" | "desc";
@@ -42,9 +43,32 @@ function exportCsv(rows: BCorpResult[], county: string, state: string) {
 interface Props { data: BCorpSearchResponse }
 
 export default function BCorpResultsTable({ data }: Props) {
-  const [sortKey, setSortKey] = useState<SortKey>("score");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const [search,  setSearch]  = useState("");
+  const [sortKey,     setSortKey]     = useState<SortKey>("score");
+  const [sortDir,     setSortDir]     = useState<SortDir>("desc");
+  const [search,      setSearch]      = useState("");
+  const [sheetsState, setSheetsState] = useState<"idle" | "loading" | "error">("idle");
+
+  async function handleExportSheets() {
+    setSheetsState("loading");
+    try {
+      const headers = [
+        "Company Name", "Website", "City", "State", "Industry", "Sector",
+        "Employees", "B Impact Score", "Certified Date", "Profile URL",
+      ];
+      const rows = filtered.map((r) => [
+        r.name, r.website, r.city, r.state, r.industry, r.sector,
+        r.employees, r.score, r.certifiedDate, r.profileUrl,
+      ]);
+      const title = `${data.county} County, ${data.state} — B Corps`;
+      const url = await exportToGoogleSheets(title, headers, rows);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setSheetsState("idle");
+    } catch (e) {
+      console.error(e);
+      setSheetsState("error");
+      setTimeout(() => setSheetsState("idle"), 3000);
+    }
+  }
 
   function handleSort(key: SortKey) {
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -128,6 +152,28 @@ export default function BCorpResultsTable({ data }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
           Export CSV
+        </button>
+
+        <button
+          type="button"
+          onClick={handleExportSheets}
+          disabled={sheetsState === "loading"}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium rounded-lg
+                     border transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed
+                     border-[var(--border)] bg-surface-2
+                     text-[#0f9d58] hover:text-[#0b8043] hover:border-[#0f9d58]/40"
+        >
+          {sheetsState === "loading" ? (
+            <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          ) : (
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.5 3h-15A1.5 1.5 0 003 4.5v15A1.5 1.5 0 004.5 21h15a1.5 1.5 0 001.5-1.5v-15A1.5 1.5 0 0019.5 3zM9 17.25H6.75v-2.5H9v2.5zm0-4H6.75v-2.5H9v2.5zm0-4H6.75V6.75H9v2.5zm4.5 8H11.25v-2.5h2.25v2.5zm0-4H11.25v-2.5h2.25v2.5zm0-4H11.25V6.75h2.25v2.5zm4.5 8H15.75v-2.5H18v2.5zm0-4H15.75v-2.5H18v2.5zm0-4H15.75V6.75H18v2.5z"/>
+            </svg>
+          )}
+          {sheetsState === "error" ? "Error — try again" : sheetsState === "loading" ? "Exporting…" : "Export to Sheets"}
         </button>
       </div>
 
